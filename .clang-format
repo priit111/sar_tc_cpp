@@ -1,0 +1,7 @@
+BasedOnStyle: WebKit
+
+
+Language: Cpp
+DerivePointerAlignment: false
+ReferenceAlignment: Left
+PointerAlignment: Left
