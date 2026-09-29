@@ -3,6 +3,17 @@
 
 #pragma once
 
-#include "../util/memory_raster.hpp"
+#include <optional>
 
-void load_img(const char* path, MemoryRaster<IQ16>& raster);
+#include "../util/memory_raster.hpp"
+#include "s1_metadata.hpp"
+#include "../sar/sar_metadata.hpp"
+
+struct SplitParams {
+    int cut_start;
+    int cut_end;
+    SARMetadata* sar_meta;
+    s1::S1Metadata* s1_meta;
+};
+
+void load_img(const char* path, MemoryRaster<IQ16>& out, std::optional<SplitParams> split_params = std::nullopt);

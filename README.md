@@ -8,10 +8,10 @@ Implements the following Sentinel1 processing scenario using SNAP terminology:
 S1 Product read -> LVL1 SLC Split -> Calibrate(Beta) -> Deburst -> Range Doppler Terrain Correction -> Output GTIFF
 
 
-* C++(CPU) implementation with no legacy mistakes in  with an eye for performance baseline comparison. 
+* C++(CPU) implementation with no legacy mistakes in with an eye for performance baseline. 
 * Implements the same processing pipeline with Cuda for a good CPU vs GPU performance comparison
 * Minimal barebones implementation with easy build setup, the S1 metadata parser is minimal. Error checking is minimal as well. Does not intend to cover a full-fledged processor's capabilities.
-* Only supports IW mode 1 swath 1 polarization only for ease of implementation
+* Only supports IW mode SLC 1 swath 1 polarization only due to ease of implementation
 * Intended as a proof of concept processor for discussion about SAR processor design and performance with a concrete implementation instead of a common pipeline instead of abstract ideas
 * Example discussion points when discussing with other developers:
   * C vs C++ vs rust vs Java vs python
@@ -52,8 +52,7 @@ make
 Requires the following libraries:
 ```
 GDAL
-boost - plan is to remove it in the future
-cuda - if building the GPU variant)
+cuda - if building the GPU variant
 ```
 
 Everything else is done via fetchcontent.
@@ -61,18 +60,15 @@ Everything else is done via fetchcontent.
 
 # TODO / Ideas for the future
 ## RTC 
-Implement either Small, Shiroma or both. SNAP calls in Terrain Flattening Op. More complicated and has again performance and memory usage implications.
-
-## Interferometry
-Again know to be slow/memory hungry, could be interesting to experiment in the future.
+WIP CPU D.Small RTC implemented, cuda TODO, Shiroma AP optimization TODO.
 
 ## Further optimizations
 
 ### algorithmic optimizations
-TC implementation is same as SNAP(reference Guide-to-Sentinel-1-Geocoding.pdf) with a few tricks, but the overall main change is the approach to tiling and overall memory usage. The details here can be optimized and the memory access patterns and how the threading is done seem to have a major impact on TC run time. Additionally, an idea is to reimplement the TC zero Doppler condition finding with via alternate methods. Hard to tell if it faster or not.
+Main variation in TC seems to be the zero Doppler finding function. Implemented(proj_conf.hpp): Bisection(from [SNAP](https://github.com/senbox-org/microwave-toolbox/blob/177cec6f66846e62b3d9471c7386311f7ecdcbee/sar-commons/src/main/java/eu/esa/sar/commons/SARGeocoding.java#L170)) and Newton approximation. 
 
 ### CPU
-Main question seems to be the TC implementation threading and memory access patterns
+Main question seems to be the TC implementation threading and memory access patterns, 
 
 ### GPU optimizations
 Datacenter vs consumer(with poor double FLOPS). Probably the improvement thing here is to experiment with nvTiff and improving the allocations and H->D and D->H transfers.

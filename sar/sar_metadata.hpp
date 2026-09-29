@@ -3,8 +3,10 @@
 
 #pragma once
 
-#include <boost/date_time/posix_time/ptime.hpp>
 #include <vector>
+
+#include "../util/proj_utils.hpp"
+#include "time_type.hpp"
 
 struct OSV {
     double tp;
@@ -48,7 +50,7 @@ struct SARMetadata {
     double range_spacing;
     double slant_range_first_sample;
     double line_time_interval;
-    boost::posix_time::ptime first_line_time;
+    AbsTime first_line_time;
     int range_size;
     int azimuth_size;
     double wavelength;
@@ -56,13 +58,26 @@ struct SARMetadata {
     std::vector<OSV> osv;
     std::string raster_path;
 
+    double incidence_angle_begin;
+    double incidence_angle_end;
+
     double calc_az_tp(int index) const
     {
         return line_time_interval * index;
     }
 
-    double calc_tp_from_dt(boost::posix_time::ptime dt) const
+    void cut_y(int new_size, AbsTime new_first_line_time)
     {
-        return (first_line_time - dt).total_microseconds() * 1e-6;
+        double orig_last_tp = line_time_interval * azimuth_size;
+        double delta = (new_first_line_time.timestamp_us - first_line_time.timestamp_us) * 1e-6;
+        SARTCPP_ASSERT(delta >= 0);
+        double new_last_tp = delta + new_size * line_time_interval;
+        SARTCPP_ASSERT(new_last_tp <= orig_last_tp);
+
+        first_line_time = new_first_line_time;
+
+        for (auto& osv_e : osv) {
+            osv_e.tp -= delta;
+        }
     }
 };

@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.25)
 project(sartcuda CUDA CXX)
 
 
+set(CMAKE_CXX_STANDARD 17)
+
+
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -20,7 +24,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fmt)
 
-set(CMAKE_CXX_STANDARD 23)
+FetchContent_Declare(
+        Eigen
+        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+        GIT_TAG 3.4
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE)
+FetchContent_MakeAvailable(Eigen)
 
 add_executable(sartcuda main_gpu.cpp
         ../s1/s1_parser.cpp
@@ -30,9 +40,10 @@ add_executable(sartcuda main_gpu.cpp
         ../s1/s1_raster_load.hpp
         ../util/memory_raster.hpp
         ../sar/dem.hpp
-        ./sar/sar_geocode_gpu.cu
-        ../sar/sar_geocode.hpp
+        sar/terrain_correction_gpu.cu
+        ../sar/terrain_correction.hpp
         ../util/math_utils.hpp
+        ../util/math_utils.cpp
         ../util/proj_utils.hpp
         ../s1/s1_metadata.hpp
         ./s1/s1_deburst_gpu.cu
@@ -48,7 +59,10 @@ target_include_directories(sartcuda PRIVATE "../")
 find_package(CUDAToolkit 11.2 REQUIRED)
 INCLUDE_DIRECTORIES(${CUDAToolkit_INCLUDE_DIRS})
 
+#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wall")
+#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Werror")
+#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wextra")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
 
-find_package(Boost CONFIG REQUIRED COMPONENTS date_time)
 
-target_link_libraries(sartcuda PRIVATE fmt::fmt pugixml gdal pthread Boost::date_time CUDA::cudart)
+target_link_libraries(sartcuda PRIVATE fmt::fmt pugixml gdal pthread Eigen3::Eigen CUDA::cudart)

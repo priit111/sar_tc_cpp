@@ -17,7 +17,7 @@
 #include "s1/s1_parser.hpp"
 #include "s1/s1_raster_load.hpp"
 
-#include "sar/sar_geocode_gpu.hpp"
+#include "sar/terrain_correction_gpu.hpp"
 #include "util/arg_parse.hpp"
 #include "util/gdal_util.hpp"
 #include "util/proj_utils.hpp"
@@ -26,6 +26,8 @@
 
 #include "util/cuda_util.hpp"
 #include "util/device_raster.h"
+
+static_assert(EN_RTC == false, "TODO");
 
 int main(int argc, const char* argv[])
 {
@@ -84,6 +86,6 @@ int main(int argc, const char* argv[])
     //* reusing host DEM memory...
     d2h_cpy(dem.data, d_tc_out.m_d_data, d_tc_out.total_size());
     MemoryRaster<float> dem_steal(dem.data, dem.x_size, dem.y_size);
-    write_tiff(dem_steal, pa.out_path.c_str(), dem.gt);
+    write_tiff(dem_steal, pa.out_path.c_str(), dem.gt, dem.no_data_value);
     return 0;
 }

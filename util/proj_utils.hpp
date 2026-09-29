@@ -10,15 +10,19 @@
 
 #include <fmt/format.h>
 
-inline void VerifyFunc(bool condition, const char* filename, const char* function, int line)
+inline void VerifyFunc(bool condition, const char* filename, const char* function, int line, std::string_view msg = std::string_view { })
 {
     if (!condition) {
+        if (!msg.empty()) {
+            fmt::print("ERROR msg = {}\n", msg);
+        }
         fmt::print("SARF_CHECK fail! file = {}  function = {}() line = {}\n", filename, function, line);
         exit(123);
     }
 }
 
 #define SARTCPP_ASSERT(a) VerifyFunc(a, __FILE__, __FUNCTION__, __LINE__)
+#define SARTCPP_ASSERT_MSG(a, b) VerifyFunc(a, __FILE__, __FUNCTION__, __LINE__, b)
 
 inline auto TimeStart() { return std::chrono::steady_clock::now(); }
 

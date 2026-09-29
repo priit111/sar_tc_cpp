@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <memory>
 
 #include "fmt/format.h"
 
@@ -47,6 +48,11 @@ struct MemoryRaster {
         m_y_size = y_size;
     }
 
+    void clear()
+    {
+        memset(m_data, 0, sizeof(T) * m_x_size * m_y_size);
+    }
+
     size_t total_size() const
     {
         return static_cast<size_t>(m_x_size) * m_y_size;
@@ -60,6 +66,14 @@ struct MemoryRaster {
     void resize_y(int new_y)
     {
         SARTCPP_ASSERT(new_y < m_y_size);
+        m_y_size = new_y;
+    }
+
+    void resize_xy(int new_x, int new_y)
+    {
+        SARTCPP_ASSERT(new_x <= m_x_size);
+        SARTCPP_ASSERT(new_y <= m_y_size);
+        m_x_size = new_x;
         m_y_size = new_y;
     }
 
@@ -108,7 +122,10 @@ struct MemoryRaster {
     {
         static_assert(sizeof(U) == sizeof(T));
         MemoryRaster<U> other;
-        other.m_data = reinterpret_cast<U*>(m_data); // TODO use/read about start_lifetime_as
+#ifdef __cpp_lib_start_lifetime_as
+        //TODO
+#endif
+        other.m_data = reinterpret_cast<U*>(m_data);
         other.m_x_size = m_x_size;
         other.m_y_size = m_y_size;
 

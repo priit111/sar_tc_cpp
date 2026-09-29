@@ -1,8 +1,13 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.20)
 project(sartcpp)
 
 
+
+set(CMAKE_CXX_STANDARD 17)
+
 include(FetchContent)
+
+set(FETCHCONTENT_QUIET OFF)
 
 FetchContent_Declare(
         pugixml
@@ -20,7 +25,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fmt)
 
-set(CMAKE_CXX_STANDARD 23)
+FetchContent_Declare(
+        Eigen
+        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+        GIT_TAG 3.4
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE)
+FetchContent_MakeAvailable(Eigen)
+
 
 add_executable(sartcpp main.cpp
         s1/s1_parser.cpp
@@ -30,16 +42,25 @@ add_executable(sartcpp main.cpp
         s1/s1_raster_load.hpp
         util/memory_raster.hpp
         sar/dem.hpp
-        sar/sar_geocode.cpp
-        sar/sar_geocode.hpp
+        sar/terrain_correction.cpp
+        sar/terrain_correction.hpp
         util/math_utils.hpp
         util/proj_utils.hpp
         s1/s1_metadata.hpp
         s1/s1_deburst.cpp
         s1/s1_deburst.hpp
         util/gdal_util.hpp
+        util/math_utils.hpp
+        util/math_utils.cpp
         s1/s1_calibrate.cpp
-        s1/s1_calibrate.hpp)
+        s1/s1_calibrate.hpp
+        sar/orbit.hpp
+        sar/time_type.hpp
+        sar/multilook.cpp
+        sar/multilook.hpp
+        sar/rtc.cpp
+        sar/rtc.hpp
+        sar/sar_geo.hpp)
 
 if(NOT CMAKE_BUILD_TYPE)
     message("Defaulting to release build...")
@@ -55,8 +76,5 @@ else ()
 endif ()
 
 
-target_compile_definitions(sartcpp PRIVATE BOOST_DATE_TIME_NO_LIB)
 
-find_package(Boost CONFIG REQUIRED COMPONENTS date_time)
-
-target_link_libraries(sartcpp PRIVATE fmt::fmt pugixml gdal pthread Boost::date_time)
+target_link_libraries(sartcpp PRIVATE fmt::fmt pugixml gdal pthread Eigen3::Eigen)

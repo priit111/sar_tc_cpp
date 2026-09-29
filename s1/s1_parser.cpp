@@ -14,8 +14,6 @@
 
 #include "../util/proj_utils.hpp"
 #include "s1_metadata.hpp"
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include "../sar/sar_metadata.hpp"
 
@@ -24,6 +22,7 @@
 using namespace s1;
 
 namespace {
+
 template <class T>
 std::vector<T> spaced_str_arr_to(std::string_view src)
 {
@@ -50,7 +49,7 @@ std::vector<T> spaced_str_arr_to(std::string_view src)
             SARTCPP_ASSERT(false);
         }
         */
-        T val = boost::lexical_cast<T>(e);
+        T val = std::strtod(e.begin(), nullptr);
         ret.push_back(val);
     }
     return ret;
@@ -85,7 +84,7 @@ void load_cal(std::string path, S1Metadata& s1_meta)
         CalibMeta cm = { };
         std::string az_str = get_str(el.child("azimuthTime"));
 
-        cm.az_time = boost::posix_time::from_iso_extended_string(az_str);
+        cm.az_time = parse_abs_time(az_str);
         cm.beta = spaced_str_arr_to<float>(get_str(el.child("betaNought")));
         cm.sigma = spaced_str_arr_to<float>(get_str(el.child("sigmaNought")));
         cm.gamma = spaced_str_arr_to<float>(get_str(el.child("gamma")));
@@ -110,7 +109,8 @@ void load_annot(std::string path, SARMetadata& sar_meta, S1Metadata& s1_meta)
     pugi::xml_document doc;
     auto res = doc.load_file(path.c_str());
     if (!res) {
-        fmt::print("ERROR!\n");
+        fmt::print("ERROR parsing = {}!\n", path);
+        SARTCPP_ASSERT(false);
     }
     // doc.print(std::cout);
     // doc.child("product").child("generalAnnotation").print(std::cout);
@@ -132,7 +132,7 @@ void load_annot(std::string path, SARMetadata& sar_meta, S1Metadata& s1_meta)
     double azimuth_spacing = get_double(ii.child("azimuthPixelSpacing"));
     std::string s = ii.child("productFirstLineUtcTime").text().as_string();
 
-    auto first_line_time = boost::posix_time::from_iso_extended_string(s);
+    auto first_line_time = parse_abs_time(s);
 
     sar_meta.frequency = get_double(doc.child("product").child("generalAnnotation").child("productInformation").child("radarFrequency"));
     sar_meta.wavelength = 299792458.0 / sar_meta.frequency;
@@ -142,11 +142,11 @@ void load_annot(std::string path, SARMetadata& sar_meta, S1Metadata& s1_meta)
 
     std::vector<OSV> osv_vec;
     for (auto osv_xml : ol.children()) {
-        auto tp = boost::posix_time::from_iso_extended_string(osv_xml.child("time").text().as_string());
+        auto tp = parse_abs_time(osv_xml.child("time").text().as_string());
 
         OSV osv = { };
 
-        osv.tp = (tp - first_line_time).total_microseconds() / 1e6;
+        osv.tp = (tp.timestamp_us - first_line_time.timestamp_us) / 1e6;
         {
             auto pos = osv_xml.child("position");
             osv.xp = get_double(pos.child("x"));
@@ -162,7 +162,7 @@ void load_annot(std::string path, SARMetadata& sar_meta, S1Metadata& s1_meta)
         }
         osv_vec.push_back(osv);
 
-        // fmt::print("[{}],[{} {} {}] [{} {} {}]\n", osv.tp, osv.xp, osv.yp, osv.zp, osv.xv, osv.yv, osv.zv);
+        fmt::print("[{}],[{} {} {}] [{} {} {}]\n", osv.tp, osv.xp, osv.yp, osv.zp, osv.xv, osv.yv, osv.zv);
     }
     sar_meta.osv = osv_vec;
 
@@ -183,7 +183,7 @@ void load_annot(std::string path, SARMetadata& sar_meta, S1Metadata& s1_meta)
 
             std::vector<int> vals = spaced_str_arr_to<int>(first_valid_list);
             BurstMeta bm = { };
-            bm.az_time = boost::posix_time::from_iso_extended_string(az_time);
+            bm.az_time = parse_abs_time(az_time);
             bm.first_valid_sample = std::move(vals);
             s1_meta.bursts.push_back(std::move(bm));
 
@@ -199,17 +199,40 @@ void load_annot(std::string path, SARMetadata& sar_meta, S1Metadata& s1_meta)
         double max_lon = -100e3;
         auto glgpl = doc.child("product").child("geolocationGrid").child("geolocationGridPointList");
         for (const auto& el : glgpl.children("geolocationGridPoint")) {
-            // el.print(std::cout);
+            //el.print(std::cout);
             double lat = get_double(el.child("latitude"));
             double lon = get_double(el.child("longitude"));
+            GeoLocationGridPoint glgp = {};
+            glgp.az_time = get_str(el.child("azimuthTime"));
+            glgp.slrt = get_double(el.child("slantRangeTime"));
+            glgp.line = get_int(el.child("line"));
+            glgp.pixel = get_int(el.child("pixel"));
+            glgp.lat = get_double(el.child("latitude"));
+            glgp.lon = get_double(el.child("longitude"));
+            glgp.height = get_double(el.child("height"));
+            glgp.incidence = get_double(el.child("incidenceAngle"));
+            glgp.elevation = get_double(el.child("elevationAngle"));
+            s1_meta.geogrid_points[glgp.line].push_back(glgp);
             min_lat = std::min(lat, min_lat);
             max_lat = std::max(lat, max_lat);
             min_lon = std::min(lon, min_lon);
             max_lon = std::max(lon, max_lon);
         }
 
+        /*
+        for (const auto& e :  s1_meta.geogrid_points) {
+            fmt::print("line = {}\n", e.first);
+            for (const auto& el : e.second) {
+                fmt::print("pix = {} inc = {}\n", el.pixel, el.incidence);
+            }
+        } */
+        auto it = s1_meta.geogrid_points.begin();
+        sar_meta.incidence_angle_begin = it->second.front().incidence;
+        sar_meta.incidence_angle_end = it->second.back().incidence;
         fmt::print("Geobox = ({} {}) , ({} {})\n", min_lat, max_lat, min_lon, max_lon);
     }
+    fmt::print("rg spacing = {}, az spacing = {}\n", sar_meta.range_spacing, sar_meta.azimuth_spacing);
+    fmt::print("first line time = {}\n", abstime_to_str(sar_meta.first_line_time));
 }
 }
 
@@ -236,13 +259,21 @@ bool parse(std::string s1_dir_path, std::string pol, std::string swath, SARMetad
                 if (p.find(".tif") != std::string::npos) {
                     sar_meta.raster_path = p;
                     continue;
-                } else {
+                }
+                if (p.find(".xml") != std::string::npos) {
                     load_annot(p, sar_meta, s1_meta);
                 }
                 // fmt::print("{}\n", dirEntry.path().string());
             }
         }
     }
+
+    //for now just assert...
+    SARTCPP_ASSERT_MSG(!sar_meta.osv.empty(), "Metadata parsing problems...");
+    SARTCPP_ASSERT_MSG(!s1_meta.bursts.empty(), "Metadata parsing problems...");
+    SARTCPP_ASSERT_MSG(!s1_meta.calib.empty(), "Metadata parsing problems...");
+
+
     return true;
 }
 }
