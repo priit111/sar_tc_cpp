@@ -33,10 +33,43 @@ cuda version is the same with the binary name being sartcuda
 
 ## DEM usage
 
-Idea copied from sarsen(https://github.com/bopen/sarsen), the processor simply uses the input DEM for output file generation. Simplifies the processor implementation(no DEM interpolation).
+Idea copied from sarsen(https://github.com/bopen/sarsen), the processor simply uses the input DEM for output file generation. Simplifies the processor implementation(no DEM interpolation).  At the moment assumes epsg 4326 without checks. Proper projection handling is TODO.
 
 ### DEM generation
-Todo insert example script
+
+Example DEM creation via [pyroSAR](https://pypi.org/project/pyroSAR/)
+
+```python
+import os
+from pyroSAR.auxdata import dem_autoload, dem_create
+from spatialist.vector import bbox
+from spatialist.auxil import utm_autodetect
+
+# writeable proj lib path
+os.environ["PROJ_LIB"] = ("./proj/")
+
+# geobox of an example S1 one swath
+extent = {'xmin': 23.14, 'xmax': 25.37, 'ymin': 59.1, 'ymax': 60.77}
+
+vrt = 'my_test.vrt'
+dem = 'my_test.tif'
+
+# ~10m spacing at 60 latitude
+tr = (18e-5,9e-5)
+
+
+# download all needed tiles and mosaic them in a VRT (GDAL virtual file format)
+with bbox(coordinates=extent, crs=4326) as geom:
+    utm_epsg = utm_autodetect(geom, 'epsg')  # auto-detect the UTM zone
+    dem_autoload(geometries=[geom], vrt=vrt, demType='Copernicus 30m Global DEM')
+
+# create the EPSG:4326 DEM
+# let's directly use the Copernicus DEM. This one uses EGM2008 geoid as vertical datum
+dem_create(src=vrt, dst=dem, geoid_convert=True, geoid='EGM2008', pbar=True,
+           tr=tr, nodata=-32768)
+
+
+```
 
 
 

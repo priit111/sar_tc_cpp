@@ -49,9 +49,8 @@ inline std::string abstime_to_str(AbsTime abstime)
     char buf[50];
     std::tm tm;
     gmtime_r(&s, &tm);
-    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S UTC", &tm);
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
     // todo iso string format... without boost
-    ctime_r(&s, buf);
     std::string ret = buf;
-    return ret + " + " + std::to_string(us) + " us";
+    return ret + "," + std::to_string(us) + " UTC";
 }

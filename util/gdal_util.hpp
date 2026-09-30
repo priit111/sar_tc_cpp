@@ -27,6 +27,9 @@ inline void write_tiff(const MemoryRaster<float>& in_raster, const char* path,
 
     if (gt.has_value()) {
         ds->SetGeoTransform(gt->data());
+        OGRSpatialReference srs;
+        srs.importFromEPSG(4326);
+        ds->SetSpatialRef(&srs);
     }
     GDALClose(ds);
     TimeStop(ts, fmt::format("File @ {}", path));

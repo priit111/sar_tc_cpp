@@ -162,10 +162,9 @@ void load_annot(std::string path, SARMetadata& sar_meta, S1Metadata& s1_meta)
         }
         osv_vec.push_back(osv);
 
-        fmt::print("[{}],[{} {} {}] [{} {} {}]\n", osv.tp, osv.xp, osv.yp, osv.zp, osv.xv, osv.yv, osv.zv);
+        //fmt::print("[{}],[{} {} {}] [{} {} {}]\n", osv.tp, osv.xp, osv.yp, osv.zp, osv.xv, osv.yv, osv.zv);
     }
     sar_meta.osv = osv_vec;
-
     {
         auto st = doc.child("product").child("swathTiming");
 
@@ -192,6 +191,7 @@ void load_annot(std::string path, SARMetadata& sar_meta, S1Metadata& s1_meta)
         }
     }
 
+    std::string geobox_str;
     {
         double min_lat = 100e3;
         double max_lat = -100e3;
@@ -229,10 +229,26 @@ void load_annot(std::string path, SARMetadata& sar_meta, S1Metadata& s1_meta)
         auto it = s1_meta.geogrid_points.begin();
         sar_meta.incidence_angle_begin = it->second.front().incidence;
         sar_meta.incidence_angle_end = it->second.back().incidence;
-        fmt::print("Geobox = ({} {}) , ({} {})\n", min_lat, max_lat, min_lon, max_lon);
+        geobox_str = fmt::format("Geobox = ({} {}) , ({} {})\n", min_lat, max_lat, min_lon, max_lon);
     }
-    fmt::print("rg spacing = {}, az spacing = {}\n", sar_meta.range_spacing, sar_meta.azimuth_spacing);
+    fmt::print("\n~~~ Metadata summary begin ~~~\n\n");
+    fmt::print("rg spacing = {}\naz spacing = {}\n", sar_meta.range_spacing, sar_meta.azimuth_spacing);
     fmt::print("first line time = {}\n", abstime_to_str(sar_meta.first_line_time));
+    fmt::print("center frequency = {}\n", sar_meta.frequency);
+    fmt::print("wavelength = {}\n", sar_meta.wavelength);
+    fmt::print("raster size = ({} , {})\n", sar_meta.range_size, sar_meta.azimuth_size);
+    fmt::print("{}", geobox_str);
+
+    {
+
+        SARTCPP_ASSERT_MSG(!osv_vec.empty(), "OSV parse fail");
+        fmt::print("middle OSV:\n");
+        OSV osv = osv_vec[osv_vec.size()/2];
+        fmt::print("[{}],[{} {} {}] [{} {} {}]\n", osv.tp, osv.xp, osv.yp, osv.zp, osv.xv, osv.yv, osv.zv);
+
+    }
+
+    fmt::print("\n~~~ Metadata summary end ~~~\n\n");
 }
 }
 
