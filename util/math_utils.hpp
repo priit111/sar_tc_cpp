@@ -34,13 +34,6 @@ HD_FUNC inline T blerp(
 // constexpr float TEST = blerp(11.0f, 22.0f, 33.0f, 44.0f, 0.6f, 0.8f);
 // static_assert(TEST == 35.2f); // FMA rounding... TODO
 
-/*
-
-            | i    j    k  |
-  a x b  =  | ax   ay   az |
-            | bx   by   bz |
- */
-
 struct Vec3D {
     double x, y, z;
 };

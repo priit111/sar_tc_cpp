@@ -10,14 +10,14 @@
 #define HD_FUNC
 #endif
 
-inline const char* const VERSION_STR = "0.0.3";
+inline const char* const VERSION_STR = "0.0.4";
 
 constexpr int SPLIT_START = -1;
 constexpr int SPLIT_END = -1;
 
 // performance, algorithm modifications - most will be removed and/or changed to arguments
 
-constexpr int TILE_Y_SIZE = 128; // NB! big memory effects
+constexpr int TILE_Y_SIZE = 128;
 constexpr int TILE_X_SIZE = 128;
 
 inline int optimal_thread_count()
@@ -44,6 +44,16 @@ inline int optimal_thread_count()
 
 // GEOCODE_MODE 1
 #define ESTIMATE_ZDT 1
+
+//
+constexpr double ZERO_DOP_COND = 1e-8;
+
+// polyfit -> polyval OSV interpolation conf
+constexpr int POLYFIT_DEGREE = 5;
+
+// 0 -> SoA
+// 1 -> AoS
+#define OPI_LAYOUT 0
 
 // 0 -> NN
 // 1 -> bilinear

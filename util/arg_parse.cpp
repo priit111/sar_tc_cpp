@@ -3,6 +3,8 @@
 
 #include "arg_parse.hpp"
 
+#include "../proj_conf.hpp"
+
 
 ProgramArgs parse_program_args(int argc, const char* argv[])
 {
@@ -14,11 +16,14 @@ ProgramArgs parse_program_args(int argc, const char* argv[])
     args.swath = argv[4];
 
     std::filesystem::path p(argv[5]);
-    if (std::filesystem::is_directory(p)) {
+    if (std::filesystem::is_directory(p))
+    {
         p /= "sartcpp_tc.tif";
         args.out_path = p.string();
         args.out_root = p.remove_filename().string();
-    } else {
+    }
+    else
+    {
         args.out_path = p.string();
         args.out_root = p.remove_filename().string();
     }
@@ -28,29 +33,40 @@ ProgramArgs parse_program_args(int argc, const char* argv[])
     args.range_multilook = 1;
     args.wif = false;
 
-    if (argc >= 6) {
-        for (int i = 6; i < argc; i++) {
+    if (argc >= 6)
+    {
+        for (int i = 6; i < argc; i++)
+        {
             fmt::print("OPT ARG = {}\n", argv[i]);
             std::string_view sv = argv[i];
-            if (sv.starts_with("--rtc=")) {
+            if (sv.starts_with("--rtc="))
+            {
                 float x = -1;
                 float y = -1;
-                if (sscanf(sv.data(), "--rtc=%f,%f", &x, &y) == 2) {
+                if (sscanf(sv.data(), "--rtc=%f,%f", &x, &y) == 2)
+                {
                     args.rtc_x_upsamp = x;
                     args.rtc_y_upsamp = y;
                 }
 
                 SARTCPP_ASSERT_MSG(x >= 1.0 && y >= 1.0, "Arg parse error");
                 args.rtc_en = true;
-            } else if (sv.starts_with("--wif")) {
+            }
+            else if (sv.starts_with("--wif"))
+            {
                 args.wif = true;
-            } else if (sv.starts_with("--ml")) {
+            }
+            else if (sv.starts_with("--ml"))
+            {
                 int r = -1;
-                if (sscanf(sv.data(), "--ml=%d", &r) == 1) {
+                if (sscanf(sv.data(), "--ml=%d", &r) == 1)
+                {
                     args.range_multilook = r;
                 }
                 SARTCPP_ASSERT_MSG(r > 1, "Arg parse_error");
-            } else {
+            }
+            else
+            {
                 SARTCPP_ASSERT_MSG(false, "Arg parse error");
             }
         }
@@ -61,11 +77,16 @@ ProgramArgs parse_program_args(int argc, const char* argv[])
     SARTCPP_ASSERT_MSG(args.swath == "iw1" || args.swath == "iw2" || args.swath == "iw3", "invalid swath");
 
     fmt::print("ARGS:\nin dir = {}\ndem = {}\npol = {}\nswath = {}\nout_root = {}\nout_path = {}\n",
-        args.s1_dir_path, args.dem_path, args.pol, args.swath, args.out_root, args.out_path);
+               args.s1_dir_path, args.dem_path, args.pol, args.swath, args.out_root, args.out_path);
     fmt::print("RTC en = {}\n", args.rtc_en);
-    if (args.rtc_en) {
-        fmt::print("RTC upsamp = {} , {}\nrange multilook = {}\n", args.rtc_x_upsamp, args.rtc_y_upsamp, args.range_multilook);
+    if (args.rtc_en)
+    {
+        fmt::print("RTC upsamp = {} , {}\nrange multilook = {}\n", args.rtc_x_upsamp, args.rtc_y_upsamp,
+                   args.range_multilook);
     }
+
+    fmt::print("proj_conf.hpp: {} {} {} {} {} {} {} {} {}\n", TILE_QUEUE_TYPE, GEOCODE_MODE, ESTIMATE_ZDT,
+               ZERO_DOP_COND, POLYFIT_DEGREE, OPI_LAYOUT, TC_INTERP_MODE, RTC_INTERP_MODE, RTC_ADD_LOCK);
 
     return args;
 }

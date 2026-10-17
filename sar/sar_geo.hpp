@@ -189,7 +189,7 @@ inline double get_zero_doppler_time_newton(double t_guess, Pos3D earth_point, co
 {
     double t = t_guess;
     constexpr int MAX_ITER = 20;
-    constexpr double COND = 1e-8;
+    constexpr double COND = ZERO_DOP_COND;
     int i = 0;
     for (i = 0; i < MAX_ITER; i++) {
         Pos3D sat_pos = interp_pos(orbit, t);
@@ -211,6 +211,9 @@ inline double get_zero_doppler_time_newton(double t_guess, Pos3D earth_point, co
     return t;
 }
 
+
+
+//TODO needs work, only y dim -> linear for now...
 struct ZDT_Estimate {
     float y0;
     float ky;
