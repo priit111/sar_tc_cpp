@@ -90,6 +90,7 @@ inline Pos3D interp_pos(const OrbitPolyInterpolator& opi, double t)
     return {xp, yp, zp};
 }
 
+HD_FUNC
 inline Vec3D interp_vel(const OrbitPolyInterpolator& opi, double t)
 {
     double xp = 0.0;
